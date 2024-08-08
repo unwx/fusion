@@ -1,0 +1,6 @@
+name: fusion
+main: unwx.fusion.Plugin
+version: 0.1
+api-version: 1.20
+author: unwx
+description: Unite players into one whole
