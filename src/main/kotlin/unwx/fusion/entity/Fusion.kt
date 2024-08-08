@@ -1,6 +1,13 @@
 package unwx.fusion.entity
 
+import dev.dominion.ecs.api.Dominion
+import dev.dominion.ecs.api.Entity
+import dev.dominion.ecs.api.Results
+import dev.dominion.ecs.api.Results.With2
 import org.bukkit.entity.Player
+import java.util.*
+import kotlin.reflect.KClass
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap as HashMap
 
 interface Fusion {
     /**
@@ -21,73 +28,46 @@ interface Fusion {
     var timeToNextLevelLeft: Int
 
 
-    /**
-     * Iterates over all active players who are:
-     *  - Online
-     *  - Alive
-     *  - In survival or adventure mode
-     *
-     * @param action The function to apply to each active player.
-     */
-    fun forEachActivePlayer(action: (ActivePlayer) -> Unit)
+    fun <T2 : Any> getComponents(comp1: KClass<T2>, withEntity: Boolean): Results<With2<Player, T2>>
 
-    /**
-     * Retrieves the `ActivePlayer` object for the given `player`, if they are active in the fusion.
-     *
-     * @return The `ActivePlayer` object, or null if the player is not active.
-     */
-    fun getActivePlayer(player: Player): ActivePlayer?
+    fun getEntity(player: Player): Entity? = getEntity(player.uniqueId)
 
-    /**
-     * Checks if the given `player` is currently active in the fusion.
-     *
-     * @return `true` if the player is active, `false` otherwise.
-     */
-    fun isActivePlayer(player: Player): Boolean
+    fun getEntity(id: UUID): Entity?
 
-    /**
-     * Adds the given `player` as an active player to the fusion.
-     */
-    fun addActivePlayer(player: ActivePlayer)
+    fun addEntity(player: Player, vararg components: Any): Entity
 
-    /**
-     * Removes the given `player` from the list of active players in the fusion.
-     */
-    fun removeActivePlayer(player: Player)
+    fun removeEntity(player: Player) = removeEntity(player.uniqueId)
 
+    fun removeEntity(id: UUID)
 
-    /**
-     * Retrieves the partner of the given `player`, if they are connected to another player in the fusion.
-     *
-     * @return The partner's `ActivePlayer` object, or null if the player is not connected.
-     */
-    fun getPartner(player: Player): ActivePlayer?
+    fun getOrAddEntity(player: Player) = getEntity(player) ?: addEntity(player)
+}
 
-    /**
-     * Checks if the given `player` is connected to another player within the fusion.
-     * Two players are considered connected if:
-     *  - They are both active players
-     *  - They are in the same world
-     *  - They are the closest to each other among all other potential pairs
-     *
-     * @return `true` if the player is connected, `false` otherwise.
-     */
-    fun isConnected(player: Player): Boolean
+class FusionImpl(
+    override val name: String,
+    override var level: Level,
+    override var timeToNextLevelLeft: Int
+) : Fusion {
+    private val ecs = Dominion.create("fusion_${name}")
+    private val playerToEntity = HashMap<UUID, Entity>()
 
-    /**
-     * Iterates over all current player connections within the fusion.
-     *
-     * @param action The function to apply to each connection.
-     */
-    fun forEachConnection(action: (Connection) -> Unit)
+    override fun <T2 : Any> getComponents(comp1: KClass<T2>, withEntity: Boolean): Results<With2<Player, T2>> {
+        return if (withEntity) ecs.findEntitiesWith(Player::class.java, comp1.java)
+        else ecs.findCompositionsWith(Player::class.java, comp1.java)
+    }
 
-    /**
-     * Adds a new connection between two players if they meet the connection criteria.
-     */
-    fun addConnection(connection: Connection)
+    override fun getEntity(id: UUID): Entity? = playerToEntity[id]
 
-    /**
-     * Removes any existing connection involving the given `player`.
-     */
-    fun removeConnection(player: Player)
+    override fun removeEntity(id: UUID) {
+        val entity = playerToEntity.remove(id) ?: return
+        ecs.deleteEntity(entity)
+    }
+
+    override fun addEntity(
+        player: Player,
+        vararg components: Any
+    ): Entity = ecs.createEntity(*components).also {
+        it.add(player)
+        playerToEntity[player.uniqueId] = it
+    }
 }
