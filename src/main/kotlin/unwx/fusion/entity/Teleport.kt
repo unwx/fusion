@@ -20,4 +20,8 @@ data class Teleport(
      * The minimum cooldown time (in ticks) between teleportations for a player.
      */
     val teleportCooldown: Int
-)
+) {
+    companion object {
+        const val FAR_DISTANCE = 4000
+    }
+}
