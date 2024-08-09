@@ -1,13 +1,15 @@
 package unwx.fusion.listener.event
 
+import dev.dominion.ecs.api.Entity
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import unwx.fusion.entity.Fusion
 
 class PlayerIsNotActiveEvent(
-    val player: Player,
+    player: Player,
+    entity: Entity,
     fusion: Fusion
-) : FusionEvent(fusion) {
+) : ActivePlayerEvent(player, entity, fusion) {
     companion object {
         private val staticHandlers: HandlerList = HandlerList()
     }

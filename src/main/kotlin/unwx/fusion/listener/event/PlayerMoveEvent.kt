@@ -5,7 +5,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
 import unwx.fusion.entity.Fusion
 
-class PlayerIsActiveEvent(
+class PlayerMoveEvent(
     player: Player,
     entity: Entity,
     fusion: Fusion
