@@ -3,6 +3,7 @@ package unwx.fusion.entity
 import dev.dominion.ecs.api.Dominion
 import dev.dominion.ecs.api.Entity
 import dev.dominion.ecs.api.Results
+import dev.dominion.ecs.api.Results.With1
 import dev.dominion.ecs.api.Results.With2
 import org.bukkit.entity.Player
 import java.util.*
@@ -27,6 +28,9 @@ interface Fusion {
      */
     var timeToNextLevelLeft: Int
 
+    fun getPlayers(): Results<Player>
+
+    fun getEntities(): Results<With1<Player>>
 
     fun <T2 : Any> getComponents(comp1: KClass<T2>, withEntity: Boolean): Results<With2<Player, T2>>
 
@@ -39,8 +43,6 @@ interface Fusion {
     fun removeEntity(player: Player) = removeEntity(player.uniqueId)
 
     fun removeEntity(id: UUID)
-
-    fun getOrAddEntity(player: Player) = getEntity(player) ?: addEntity(player)
 }
 
 class FusionImpl(
@@ -50,6 +52,10 @@ class FusionImpl(
 ) : Fusion {
     private val ecs = Dominion.create("fusion_${name}")
     private val playerToEntity = HashMap<UUID, Entity>()
+
+    override fun getPlayers(): Results<Player> = ecs.findCompositionsWith(Player::class.java)
+
+    override fun getEntities(): Results<With1<Player>> = ecs.findEntitiesWith(Player::class.java)
 
     override fun <T2 : Any> getComponents(comp1: KClass<T2>, withEntity: Boolean): Results<With2<Player, T2>> {
         return if (withEntity) ecs.findEntitiesWith(Player::class.java, comp1.java)
@@ -61,6 +67,10 @@ class FusionImpl(
     override fun removeEntity(id: UUID) {
         val entity = playerToEntity.remove(id) ?: return
         ecs.deleteEntity(entity)
+        /*
+         * "Removes the entity by freeing the id and canceling the reference to all components, if any."
+         * Therefore, there is no point in returning the entity to the caller.
+         */
     }
 
     override fun addEntity(

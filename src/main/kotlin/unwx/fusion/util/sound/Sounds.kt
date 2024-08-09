@@ -39,20 +39,6 @@ object Sounds {
         Sound.BLOCK_NOTE_BLOCK_BASEDRUM
     )
 
-    val fusionConnect = RandomSound(
-        HIGH,
-        HIGHEST,
-        Sound.BLOCK_NOTE_BLOCK_BELL,
-        Sound.BLOCK_NOTE_BLOCK_CHIME
-    )
-
-    val fusionDisconnect = RandomSound(
-        LOWEST,
-        LOWER,
-        Sound.BLOCK_NOTE_BLOCK_BELL,
-        Sound.BLOCK_NOTE_BLOCK_CHIME
-    )
-
     val fusionLevelUp = RandomSounds(
         2,
         3,
@@ -150,14 +136,16 @@ object Sounds {
     }
 
 
-    fun AdvanceSound.playAt(location: Location) {
-        val world = location.world
-        if (world == null) {
-            warn { "Cannot play sound '$this': location has no world" }
-            return
-        }
+    fun AdvanceSound.playAt(vararg locations: Location) {
+        locations.forEach {
+            val world = it.world
+            if (world == null) {
+                warn { "Cannot play sound '$this': location has no world" }
+                return
+            }
 
-        world.playSound(location, this.sound, this.volume, this.pitch)
+            world.playSound(it, this.sound, this.volume, this.pitch)
+        }
     }
 
     fun Array<AdvanceSound>.playAt(location: Location) {

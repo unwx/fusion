@@ -12,12 +12,6 @@ object Particles {
     private val COMPASS_PING = END_ROD
     private val TELEPORT_TRACE = SONIC_BOOM
 
-    val fusionConnectPainter = LinearPainter(
-        FUSION_CONNECT,
-        15,
-        2.5,
-    )
-
     val distributeDeathPainter = LinearPainter(
         DISTRIBUTE_DEATH,
         35,
