@@ -6,7 +6,7 @@ import dev.dominion.ecs.api.Entity
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
-import unwx.fusion.entity.Partner
+import unwx.fusion.entity.Connection
 import java.time.Duration
 
 const val TPS = 20
@@ -19,7 +19,9 @@ inline fun Duration.toTicks(): Int = (this.toMillis() / (1000 / TPS)).toInt()
 
 inline fun Entity.getPlayer(): Player? = this.get(Player::class.java)
 
-inline fun Entity.getPartner(): Player? = this.get(Partner::class.java)?.player
+inline fun Entity.getPartner(): Player? = this.get(Connection::class.java)?.player2
+
+inline fun Entity.getConnection(): Connection? = this.get(Connection::class.java)
 
 inline fun Player.distanceSquared(player: Player): Double = this.location.distanceSquared(player.location)
 

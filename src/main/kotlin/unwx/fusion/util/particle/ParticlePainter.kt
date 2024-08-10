@@ -1,9 +1,12 @@
 package unwx.fusion.util.particle
 
 import org.bukkit.Location
+import org.bukkit.entity.Player
 import unwx.fusion.util.Logger.warn
 
 abstract class ParticlePainter {
+    fun drawLine(from: Player, to: Player) = drawLine(from.location, to.location)
+
     @Suppress("NAME_SHADOWING")
     fun drawLine(from: Location, to: Location) {
         val from = from.clone()

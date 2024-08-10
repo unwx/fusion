@@ -3,7 +3,6 @@ package unwx.fusion.entity
 import dev.dominion.ecs.api.Dominion
 import dev.dominion.ecs.api.Entity
 import dev.dominion.ecs.api.Results
-import dev.dominion.ecs.api.Results.With1
 import dev.dominion.ecs.api.Results.With2
 import org.bukkit.entity.Player
 import java.util.*
@@ -28,11 +27,9 @@ interface Fusion {
      */
     var timeToNextLevelLeft: Int
 
-    fun getPlayers(): Results<Player>
+    fun <T1 : Any> getComponent(comp1: KClass<T1>): Results<T1>
 
-    fun getEntities(): Results<With1<Player>>
-
-    fun <T2 : Any> getComponents(comp1: KClass<T2>, withEntity: Boolean): Results<With2<Player, T2>>
+    fun <T1 : Any, T2: Any> getComponents(comp1: KClass<T1>, comp2: KClass<T2>, withEntity: Boolean): Results<With2<T1, T2>>
 
     fun getEntity(player: Player): Entity? = getEntity(player.uniqueId)
 
@@ -53,14 +50,18 @@ class FusionImpl(
     private val ecs = Dominion.create("fusion_${name}")
     private val playerToEntity = HashMap<UUID, Entity>()
 
-    override fun getPlayers(): Results<Player> = ecs.findCompositionsWith(Player::class.java)
 
-    override fun getEntities(): Results<With1<Player>> = ecs.findEntitiesWith(Player::class.java)
+    override fun <T1 : Any> getComponent(comp1: KClass<T1>): Results<T1> = ecs.findCompositionsWith(comp1.java)
 
-    override fun <T2 : Any> getComponents(comp1: KClass<T2>, withEntity: Boolean): Results<With2<Player, T2>> {
-        return if (withEntity) ecs.findEntitiesWith(Player::class.java, comp1.java)
-        else ecs.findCompositionsWith(Player::class.java, comp1.java)
+    override fun <T1 : Any, T2 : Any> getComponents(
+        comp1: KClass<T1>,
+        comp2: KClass<T2>,
+        withEntity: Boolean
+    ): Results<With2<T1, T2>> {
+        return if (withEntity) ecs.findEntitiesWith(comp1.java, comp2.java)
+        else ecs.findCompositionsWith(comp1.java, comp2.java)
     }
+
 
     override fun getEntity(id: UUID): Entity? = playerToEntity[id]
 

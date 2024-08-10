@@ -3,19 +3,12 @@ package unwx.fusion.listener
 import dev.dominion.ecs.api.Entity
 import org.bukkit.Particle
 import org.bukkit.Sound
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import unwx.fusion.entity.Fusion
-import unwx.fusion.entity.OtherWorld
-import unwx.fusion.entity.Partner
-import unwx.fusion.entity.WorldMarker
-import unwx.fusion.listener.event.PlayerChangedWorldEvent
-import unwx.fusion.listener.event.PlayerIsActiveEvent
-import unwx.fusion.listener.event.PlayerIsNotActiveEvent
-import unwx.fusion.listener.event.PlayerMoveEvent
-import unwx.fusion.util.distanceSquared
-import unwx.fusion.util.getPartner
-import unwx.fusion.util.getPlayer
+import unwx.fusion.entity.*
+import unwx.fusion.listener.event.*
+import unwx.fusion.util.*
 import unwx.fusion.util.particle.LinearPainter
 import unwx.fusion.util.sound.RandomSound
 import unwx.fusion.util.sound.Sounds.HIGH
@@ -78,7 +71,7 @@ class ConnectionUpdater : Listener {
 
         val iterator = run {
             val marker = entity1.get(WorldMarker::class.java)!!
-            val getComponents = { fusion.getComponents(marker::class, true) }
+            val getComponents = { fusion.getComponents(Player::class, marker::class, true) }
 
             if (marker is OtherWorld) {
                 getComponents()
@@ -124,25 +117,31 @@ class ConnectionUpdater : Listener {
         removeConnection(entity1, fusion)
         removeConnection(entity2, fusion)
 
-        entity1.add(Partner(player2))
-        entity2.add(Partner(player1))
+        val passiveBuffer = PassiveDistributionBuffer()
+        val connection1 = Connection(player1, player2, passiveBuffer)
+        val connection2 = Connection(player2, player1, passiveBuffer)
+        entity1.add(connection1)
+        entity2.add(connection2)
 
         fusionConnectSound.sound().playAt(player1.location, player2.location)
         fusionConnectPainter.drawLine(player1.location, player2.location)
+        callEvent(ConnectedEvent(connection1, fusion))
     }
 
     private fun removeConnection(
         entity1: Entity,
         fusion: Fusion
     ) {
-        val player2 = entity1.getPartner() ?: return
+        val connection = entity1.getConnection() ?: return
+        val player2 = connection.player2
         val entity2 = fusion.getEntity(player2.uniqueId)!!
         val player1 = entity1.getPlayer()!!
 
-        entity1.removeType(Partner::class.java)
-        entity2.removeType(Partner::class.java)
+        entity1.removeType(Connection::class.java)
+        entity2.removeType(Connection::class.java)
 
         fusionDisconnectSound.sound().playAt(player1.location, player2.location)
         searchBestPartnerFor(entity2, fusion, player1.uniqueId)
+        callEvent(DisconnectedEvent(connection, fusion))
     }
 }
