@@ -6,6 +6,7 @@ import unwx.fusion.entity.Fusion
 
 class ConnectedEvent(
     val connection: Connection,
+    val connectionsCount: Int,
     fusion: Fusion
 ) : FusionEvent(fusion) {
     companion object {

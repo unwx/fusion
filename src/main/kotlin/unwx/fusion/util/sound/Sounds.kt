@@ -39,17 +39,6 @@ object Sounds {
         Sound.BLOCK_NOTE_BLOCK_BASEDRUM
     )
 
-    val fusionLevelUp = RandomSounds(
-        2,
-        3,
-        RandomSound(
-            NORMAL,
-            HIGHEST,
-            Sound.BLOCK_NOTE_BLOCK_BELL,
-            Sound.BLOCK_NOTE_BLOCK_CHIME
-        )
-    )
-
     val deathDistributed = RandomSounds(
         8,
         11,
@@ -148,7 +137,7 @@ object Sounds {
         }
     }
 
-    fun Array<AdvanceSound>.playAt(location: Location) {
-        this.forEach { it.playAt(location) }
+    fun Array<AdvanceSound>.playAt(vararg locations: Location) {
+        this.forEach { it.playAt(*locations) }
     }
 }

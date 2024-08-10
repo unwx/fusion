@@ -17,8 +17,11 @@ import unwx.fusion.util.sound.Sounds.LOWER
 import unwx.fusion.util.sound.Sounds.LOWEST
 import unwx.fusion.util.sound.Sounds.playAt
 import java.util.*
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap as IntHashMap
 
 class ConnectionUpdater : Listener {
+    private val connectionsCountMap = IntHashMap<Fusion>()
+
     // TODO on a large server sounds can be annoying, solution? Reduce volume?
     private val fusionConnectSound = RandomSound(
         HIGH,
@@ -125,7 +128,9 @@ class ConnectionUpdater : Listener {
 
         fusionConnectSound.sound().playAt(player1.location, player2.location)
         fusionConnectPainter.drawLine(player1.location, player2.location)
-        callEvent(ConnectedEvent(connection1, fusion))
+
+        val connectionsCount = connectionsCountMap.addTo(fusion, 1) + 1
+        callEvent(ConnectedEvent(connection1, connectionsCount, fusion))
     }
 
     private fun removeConnection(
@@ -142,6 +147,9 @@ class ConnectionUpdater : Listener {
 
         fusionDisconnectSound.sound().playAt(player1.location, player2.location)
         searchBestPartnerFor(entity2, fusion, player1.uniqueId)
-        callEvent(DisconnectedEvent(connection, fusion))
+
+        val connectionsCount = connectionsCountMap.addTo(fusion, -1) -1
+        if (connectionsCount <= 0) connectionsCountMap.removeInt(fusion)
+        callEvent(DisconnectedEvent(connection, connectionsCount, fusion))
     }
 }
