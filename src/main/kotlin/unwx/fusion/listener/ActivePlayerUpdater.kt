@@ -20,7 +20,7 @@ import unwx.fusion.util.callEvent
 
 class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
     /*
-     * We use LOW priority for events that we might cancel.
+     * We use LOW priority for events that we might cancel/modify.
      * We use HIGH priority when we only need to react to events that haven't been canceled.
      * The priority system here might seem counterintuitive.
      *

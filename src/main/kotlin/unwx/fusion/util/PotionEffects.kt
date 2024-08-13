@@ -2,12 +2,26 @@
 
 package unwx.fusion.util
 
+import it.unimi.dsi.fastutil.objects.ObjectArrayList
 import org.bukkit.NamespacedKey
 import org.bukkit.potion.PotionEffect
 import unwx.fusion.plugin
 
 object PotionEffects {
     private val distributed = NamespacedKey(plugin(), "fusion_pe_distributed")
+
+    fun Collection<PotionEffect>.unwrapHidden(): List<PotionEffect> {
+        val result = ObjectArrayList<PotionEffect>()
+        for (effect in this) {
+            var current: PotionEffect? = effect
+            while (current != null) {
+                result.add(current)
+                current = current.hiddenPotionEffect
+            }
+        }
+
+        return result
+    }
 
     fun PotionEffect.isDistributed() = this.key == distributed
 

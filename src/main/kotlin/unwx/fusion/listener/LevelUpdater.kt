@@ -67,7 +67,7 @@ class LevelUpdater : Listener {
             scheduleLevelUp(fusion, fusion.timeToNextLevelLeft.toLong())
         }
 
-        fusion.getComponent(Player::class).iterator().forEach { fusionLevelUpSounds.sounds().playAt(it.location) }
+        fusion.getComponent(Player::class).iterator().forEach { fusionLevelUpSounds.sounds().playAt(it) }
     }
 
     private fun scheduleLevelUp(

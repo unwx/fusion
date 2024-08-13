@@ -5,15 +5,10 @@ import org.bukkit.Particle.GLOW
 import org.bukkit.Particle.TOTEM
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.potion.PotionEffect
 import unwx.fusion.FusionDatabase
 import unwx.fusion.entity.Connection
 import unwx.fusion.entity.Fusion
 import unwx.fusion.entity.PassiveDistributionBuffer
-import unwx.fusion.listener.event.ConnectedEvent
-import unwx.fusion.listener.event.DisconnectedEvent
-import unwx.fusion.util.PotionEffects.isDistributed
-import unwx.fusion.util.PotionEffects.toDistributed
 import unwx.fusion.util.TPS
 import unwx.fusion.util.particle.LinearPainter
 import java.util.*
@@ -36,17 +31,6 @@ class PassiveDistributor(private val database: FusionDatabase) : EventListener {
     @EventHandler
     fun onTick(event: ServerTickStartEvent) {
         database.forEach(::distributeFusion)
-    }
-
-    @EventHandler
-    fun onConnect(event: ConnectedEvent) {
-        if (!event.fusion.level.arePotionEffectsDistributed) return
-        distributePotionEffects(event.connection)
-    }
-
-    @EventHandler
-    fun onDisconnect(event: DisconnectedEvent) {
-        event.connection.forEach(::removeDistributedPotionEffects)
     }
 
     private fun distributeFusion(fusion: Fusion) {
@@ -86,27 +70,6 @@ class PassiveDistributor(private val database: FusionDatabase) : EventListener {
                     { buffer, value -> buffer.food = value }
                 )
                 if (distributed) distributeFoodPainter.drawLine(connection.player1, connection.player2)
-            }
-        }
-    }
-
-    private fun distributePotionEffects(connection: Connection) {
-        val player1 = connection.player1
-        val player2 = connection.player2
-
-        player1.addPotionEffects(player2.activePotionEffects.toDistributed())
-        player2.addPotionEffects(player1.activePotionEffects.toDistributed())
-    }
-
-    private fun removeDistributedPotionEffects(player: Player) {
-        val effects = player.activePotionEffects
-        if (!player.clearActivePotionEffects()) return
-
-        effects.forEach {
-            var current: PotionEffect? = it
-            while (current != null) {
-                if (!current.isDistributed()) player.addPotionEffect(current)
-                current = current.hiddenPotionEffect
             }
         }
     }

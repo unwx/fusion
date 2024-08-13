@@ -165,7 +165,7 @@ class ConnectionUpdater(private val database: FusionDatabase) : Listener {
         entity1.removeType(Connection::class.java)
         entity2.removeType(Connection::class.java)
 
-        fusionDisconnectSound.sound().playAt(player1.location, player2.location)
+        fusionDisconnectSound.sound().playAt(player1, player2)
         searchBestPartnerFor(entity2, fusion, exceptionId = player1.uniqueId)
 
         val connectionsCount = connectionsCountMap.addTo(fusion, -1) -1

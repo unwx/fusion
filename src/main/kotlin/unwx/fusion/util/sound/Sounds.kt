@@ -2,6 +2,7 @@ package unwx.fusion.util.sound
 
 import org.bukkit.Location
 import org.bukkit.Sound
+import org.bukkit.entity.Player
 import unwx.fusion.entity.Teleport
 import unwx.fusion.util.Logger.warn
 import unwx.fusion.util.scale
@@ -37,23 +38,6 @@ object Sounds {
         LOWEST,
         LOWER,
         Sound.BLOCK_NOTE_BLOCK_BASEDRUM
-    )
-
-    val deathDistributed = RandomSounds(
-        8,
-        11,
-        RandomSound(
-            LOWEST,
-            LOWER,
-            Sound.BLOCK_NOTE_BLOCK_DIDGERIDOO,
-            Sound.BLOCK_NOTE_BLOCK_BASS
-        ),
-        RandomSound(
-            HIGHER,
-            HIGHEST,
-            Sound.BLOCK_NOTE_BLOCK_BELL,
-            Sound.BLOCK_NOTE_BLOCK_FLUTE
-        )
     )
 
     val damageDistributed = RandomSound(
@@ -125,6 +109,10 @@ object Sounds {
     }
 
 
+    fun AdvanceSound.playAt(vararg players: Player) {
+        players.forEach { this.playAt(it.location) }
+    }
+
     fun AdvanceSound.playAt(vararg locations: Location) {
         locations.forEach {
             val world = it.world
@@ -135,6 +123,10 @@ object Sounds {
 
             world.playSound(it, this.sound, this.volume, this.pitch)
         }
+    }
+
+    fun Array<AdvanceSound>.playAt(vararg players: Player) {
+        this.forEach { it.playAt(*players) }
     }
 
     fun Array<AdvanceSound>.playAt(vararg locations: Location) {
