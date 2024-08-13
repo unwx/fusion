@@ -1,13 +1,21 @@
 package unwx.fusion.listener
 
 import dev.dominion.ecs.api.Entity
+import org.bukkit.Location
 import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerChangedWorldEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import unwx.fusion.FusionDatabase
 import unwx.fusion.entity.*
-import unwx.fusion.listener.event.*
+import unwx.fusion.listener.event.ConnectedEvent
+import unwx.fusion.listener.event.DisconnectedEvent
+import unwx.fusion.listener.event.PlayerIsActiveEvent
+import unwx.fusion.listener.event.PlayerIsNotActiveEvent
 import unwx.fusion.util.*
 import unwx.fusion.util.particle.LinearPainter
 import unwx.fusion.util.sound.RandomSound
@@ -19,7 +27,7 @@ import unwx.fusion.util.sound.Sounds.playAt
 import java.util.*
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap as IntHashMap
 
-class ConnectionUpdater : Listener {
+class ConnectionUpdater(private val database: FusionDatabase) : Listener {
     private val connectionsCountMap = IntHashMap<Fusion>()
 
     // TODO on a large server sounds can be annoying, solution? Reduce volume?
@@ -42,9 +50,20 @@ class ConnectionUpdater : Listener {
     )
 
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerMove(event: PlayerMoveEvent) {
-        searchBestPartnerFor(event.entity, event.fusion)
+        val fusion = database.findBy(event.player) ?: return
+        val entity = fusion.getEntity(event.player) ?: return
+        searchBestPartnerFor(entity, fusion, location1 = event.to)
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onPlayerChangedWorld(event: PlayerChangedWorldEvent) {
+        val fusion = database.findBy(event.player) ?: return
+        val entity = fusion.getEntity(event.player) ?: return
+
+        // The world is already changed in the player's fields
+        searchBestPartnerFor(entity, fusion)
     }
 
     @EventHandler
@@ -53,22 +72,20 @@ class ConnectionUpdater : Listener {
     }
 
     @EventHandler
-    fun onPlayerChangedWorld(event: PlayerChangedWorldEvent) {
-        // The world is already changed in the player's fields
-        searchBestPartnerFor(event.entity, event.fusion)
-    }
-
-    @EventHandler
     fun onPlayerIsNotActive(event: PlayerIsNotActiveEvent) {
         removeConnection(event.entity, event.fusion)
     }
 
+
+    @Suppress("NAME_SHADOWING")
     private fun searchBestPartnerFor(
         entity1: Entity,
         fusion: Fusion,
+        location1: Location? = null,
         exceptionId: UUID? = null
     ) {
         val player1 = entity1.getPlayer()!!
+        val location1 = location1 ?: player1.location
         var bestPartner: Entity? = null
         var smallestDistance: Double? = null
 
@@ -79,7 +96,7 @@ class ConnectionUpdater : Listener {
             if (marker is OtherWorld) {
                 getComponents()
                     .stream()
-                    .filter { it.comp1.world.uid == player1.world.uid }
+                    .filter { it.comp1.world.uid == location1.world.uid }
                     .iterator()
             } else {
                 getComponents().iterator()
@@ -87,13 +104,16 @@ class ConnectionUpdater : Listener {
         }
 
         for (components in iterator) {
-            if (components.comp1.uniqueId == exceptionId) continue
+            if (components.comp1.uniqueId in arrayOf(exceptionId, player1.uniqueId)) continue
 
             // TODO should I implement something like Octree? Or use parallel processing?
-            val distance = player1.distanceSquared(components.comp1)
+            val distance = location1.distanceSquared(components.comp1.location)
             if (distance > fusion.level.connectionRange || (smallestDistance != null && distance >= smallestDistance)) continue
 
-            val player2PartnerDistance = components.entity.getPartner()?.let { components.comp1.distanceSquared(it) }
+            val player2PartnerDistance = components.entity.getPartner()?.let {
+                if (it.uniqueId == player1.uniqueId) components.comp1.location.distanceSquared(location1)
+                else components.comp1.distanceSquared(it)
+            }
             if (player2PartnerDistance != null && distance >= player2PartnerDistance) continue
 
             smallestDistance = distance
@@ -146,7 +166,7 @@ class ConnectionUpdater : Listener {
         entity2.removeType(Connection::class.java)
 
         fusionDisconnectSound.sound().playAt(player1.location, player2.location)
-        searchBestPartnerFor(entity2, fusion, player1.uniqueId)
+        searchBestPartnerFor(entity2, fusion, exceptionId = player1.uniqueId)
 
         val connectionsCount = connectionsCountMap.addTo(fusion, -1) -1
         if (connectionsCount <= 0) connectionsCountMap.removeInt(fusion)

@@ -1,23 +1,22 @@
 package unwx.fusion.listener
 
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
-import dev.dominion.ecs.api.Entity
 import org.bukkit.GameMode
 import org.bukkit.World
 import org.bukkit.entity.Player
-import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.*
+import org.bukkit.event.player.PlayerChangedWorldEvent
+import org.bukkit.event.player.PlayerGameModeChangeEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import unwx.fusion.FusionDatabase
 import unwx.fusion.entity.*
 import unwx.fusion.listener.event.PlayerIsActiveEvent
 import unwx.fusion.listener.event.PlayerIsNotActiveEvent
 import unwx.fusion.util.callEvent
-import unwx.fusion.listener.event.PlayerChangedWorldEvent as FusionPlayerChangedWorldEvent
-import unwx.fusion.listener.event.PlayerMoveEvent as FusionPlayerMoveEvent
 
 class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
     /*
@@ -38,18 +37,13 @@ class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
      * We leave the possibility for other plugins to use LOWEST & HIGHEST priorities if they find it necessary.
      */
 
-    @EventHandler(priority = EventPriority.HIGH)
-    fun onPlayerMove(event: PlayerMoveEvent) {
-        proxyPlayerEvent(event, ::FusionPlayerMoveEvent)
-    }
 
-
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerQuit(event: PlayerQuitEvent) {
         handleConditionChange(event.player, online = false)
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerJoin(event: PlayerJoinEvent) {
         handleConditionChange(event.player, online = true)
     }
@@ -59,7 +53,7 @@ class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
         handleConditionChange(event.entity, dead = true)
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerRespawn(event: PlayerPostRespawnEvent) {
         handleConditionChange(event.player, dead = false)
     }
@@ -69,7 +63,7 @@ class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
         handleConditionChange(event.player, gameMode = event.newGameMode)
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerChangedWorld(event: PlayerChangedWorldEvent) {
         val player = event.player
         val fusion = database.findBy(player) ?: return
@@ -78,19 +72,8 @@ class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
         val world = player.world
         entity.removeType(WorldMarker::class.java)
         entity.add(getWorldMarker(world))
-        callEvent(FusionPlayerChangedWorldEvent(event.from, player, entity, fusion))
     }
 
-
-    private fun proxyPlayerEvent(
-        event: PlayerEvent,
-        transform: (Player, Entity, Fusion) -> Event
-    ) {
-        val player = event.player
-        val fusion = database.findBy(player) ?: return
-        val entity = fusion.getEntity(player) ?: return
-        callEvent(transform(player, entity, fusion))
-    }
 
     @Suppress("NAME_SHADOWING")
     private fun handleConditionChange(
