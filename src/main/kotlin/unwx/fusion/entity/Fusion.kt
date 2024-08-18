@@ -11,11 +11,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap as HashMap
 
 interface Fusion {
     /**
-     * The unique name of this fusion.
-     */
-    val name: String
-
-    /**
      * The current level of this fusion.
      *
      * @see Level
@@ -43,11 +38,16 @@ interface Fusion {
 }
 
 class FusionImpl(
-    override val name: String,
     override var level: Level,
     override var timeToNextLevelLeft: Int
 ) : Fusion {
-    private val ecs = Dominion.create("fusion_${name}")
+    companion object {
+        private var counter = 0
+    }
+
+    constructor(level: Level): this(level, level.timeToNextLevel ?: -1)
+
+    private val ecs = Dominion.create("fusion_${counter++}")
     private val playerToEntity = HashMap<UUID, Entity>()
 
 

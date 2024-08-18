@@ -6,6 +6,7 @@ import dev.dominion.ecs.api.Entity
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
+import org.bukkit.scoreboard.Team
 import unwx.fusion.entity.Connection
 import java.time.Duration
 
@@ -24,6 +25,8 @@ inline fun Entity.getPartner(): Player? = this.get(Connection::class.java)?.play
 inline fun Entity.getConnection(): Connection? = this.get(Connection::class.java)
 
 inline fun Player.distanceSquared(player: Player): Double = this.location.distanceSquared(player.location)
+
+inline fun Player.getTeam(): Team? = Bukkit.getScoreboardManager().mainScoreboard.getEntityTeam(this)
 
 fun scale(
     value: Double,

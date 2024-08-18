@@ -7,6 +7,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.scheduler.BukkitTask
+import unwx.fusion.LevelManager
 import unwx.fusion.entity.Fusion
 import unwx.fusion.listener.event.ConnectedEvent
 import unwx.fusion.listener.event.DisconnectedEvent
@@ -19,7 +20,7 @@ import unwx.fusion.util.sound.Sounds.NORMAL
 import unwx.fusion.util.sound.Sounds.playAt
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap as HashMap
 
-class LevelUpdater : Listener {
+class LevelUpdater(private val levelManager: LevelManager) : Listener {
     private val fusionToTask = HashMap<Fusion, Task>()
     private val fusionLevelUpSounds = RandomSounds(
         2,
@@ -35,7 +36,7 @@ class LevelUpdater : Listener {
     @EventHandler
     fun onConnect(event: ConnectedEvent) {
         val fusion = event.fusion
-        if (event.connectionsCount > 1 || fusion.level.next == null) return
+        if (event.connectionsCount > 1 || levelManager.isLast(fusion.level)) return
 
         if (fusionToTask.containsKey(fusion)) {
             warn { "Connections count for fusion '$fusion' is '${event.connectionsCount}', but levelUp() task is already scheduled" }
@@ -60,9 +61,9 @@ class LevelUpdater : Listener {
     }
 
     private fun levelUp(fusion: Fusion) {
-        fusion.level = fusion.level.next!!
+        fusion.level = levelManager.getNext(fusion.level)!!
 
-        if (fusion.level.next != null) {
+        if (!levelManager.isLast(fusion.level)) {
             fusion.timeToNextLevelLeft = fusion.level.timeToNextLevel!!
             scheduleLevelUp(fusion, fusion.timeToNextLevelLeft.toLong())
         }

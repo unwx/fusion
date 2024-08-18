@@ -16,7 +16,10 @@ import unwx.fusion.FusionDatabase
 import unwx.fusion.entity.*
 import unwx.fusion.listener.event.PlayerIsActiveEvent
 import unwx.fusion.listener.event.PlayerIsNotActiveEvent
+import unwx.fusion.listener.event.TeamJoinEvent
+import unwx.fusion.listener.event.TeamLeaveEvent
 import unwx.fusion.util.callEvent
+import unwx.fusion.util.getTeam
 
 class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
     /*
@@ -37,6 +40,16 @@ class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
      * We leave the possibility for other plugins to use LOWEST & HIGHEST priorities if they find it necessary.
      */
 
+
+    @EventHandler
+    fun onTeamJoin(event: TeamJoinEvent) {
+        handleConditionChange(event.player, event.fusion)
+    }
+
+    @EventHandler
+    fun onTeamLeave(event: TeamLeaveEvent) {
+        handleConditionChange(event.player, event.fusion)
+    }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerQuit(event: PlayerQuitEvent) {
@@ -78,14 +91,15 @@ class ActivePlayerUpdater(private val database: FusionDatabase) : Listener {
     @Suppress("NAME_SHADOWING")
     private fun handleConditionChange(
         player: Player,
+        fusion: Fusion? = database.findBy(player),
         online: Boolean = player.isConnected,
         dead: Boolean = player.isDead,
         gameMode: GameMode = player.gameMode
     ) {
-        val fusion = database.findBy(player) ?: return
+        fusion ?: return
         val entity = fusion.getEntity(player)
 
-        if (online && !dead && isAllowedGameMode(gameMode)) {
+        if (online && !dead && isAllowedGameMode(gameMode) && player.getTeam() != null) {
             if (entity == null) {
                 val entity = fusion.addEntity(player, getWorldMarker(player.world))
                 callEvent(PlayerIsActiveEvent(player, entity, fusion))

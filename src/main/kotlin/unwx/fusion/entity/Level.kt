@@ -7,11 +7,6 @@ data class Level(
     val id: Int,
 
     /**
-     * The next level in the progression, or `null` if this is the highest level.
-     */
-    val next: Level?,
-
-    /**
      * The maximum distance (in blocks) allowed between players for them to be considered connected.
      */
     val connectionRange: Int,
